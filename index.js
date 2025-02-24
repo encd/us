@@ -31,6 +31,7 @@ app.use(session({
 // Dummy database of users (username: password)
 const usersDb = {
   'User1': 'password9900p',
+  'User2': 'password9900p'
 };
 
 // Middleware to check if the user is authenticated
@@ -83,16 +84,25 @@ app.get('/sequre/chat/api', isAuthenticated, (req, res) => {
 
 // Socket.IO setup for handling chat messages
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
+    console.log(`User connected: ${socket.id}`);
 
-  socket.on("user-message", (message) => {
-    io.emit("message", message); // Broadcast message to all clients
-  });
+    // Notify all users that a new user has joined
+   io.on("connection", (socket) => {
+    console.log(`User connected: ${socket.id}`);
 
-  socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
+    // Notify all users except the newly connected one
+    socket.broadcast.emit("message", { userId: "system", message: `User ${socket.id} connected` });
+
+    socket.on("user-message", (data) => {
+        io.emit("message", data); // Broadcast message to all clients
+    });
+
+    socket.on("disconnect", () => {
+        console.log(`User disconnected: ${socket.id}`);
+        io.emit("message", { userId: "system", message: `User ${socket.id} disconnected` });
+    });
 });
+
 
 // 404 Error Handling
 app.use((req, res) => {
