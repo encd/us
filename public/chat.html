@@ -21,11 +21,11 @@
             text-align: center;
         }
         .chat-container {
-            width: 90%;
+            width: 92%;
             max-width: 600px;
             margin: px auto;
             background: white;
-            padding:20px;
+            padding:18px;
             border-radius: 8px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             display: flex;
@@ -94,43 +94,42 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script> 
-    <script> 
-        const socket = io(); 
-        const sendBtn = document.getElementById("sendBtn");
-        const chatInput = document.getElementById("chatInput");
-        const chatBox = document.getElementById("chatBox");
+   <script>
+    const socket = io();
+    let myUserId = Math.random().toString(36).substring(2, 15); // Generate unique ID
 
-        // Unique ID for sender
-        const userId = Math.random().toString(36).substring(2, 15);
+    // Receive messages (from the server)
+    socket.on("message", (data) => {
+        const newMessage = document.createElement("div");
 
-        // Receive messages (Only show messages from others)
-        socket.on("message", (data) => {
-            if (data.userId !== userId) {  // Show only if message is from another user
-                const newMessage = document.createElement("div");
-                newMessage.classList.add("message", "received");
-                newMessage.textContent = data.message;
-                chatBox.appendChild(newMessage);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-        });
+        if (data.userId === "system") {
+            newMessage.classList.add("system");
+            newMessage.style.textAlign = "center";
+            newMessage.style.fontSize = "12px";
+            newMessage.style.color = "gray";
+            newMessage.textContent = data.message;
+        } else if (data.userId !== myUserId) {
+            newMessage.classList.add("message", "received");
+            newMessage.textContent = data.message;
+        } else {
+            newMessage.classList.add("message", "sent");
+            newMessage.textContent = data.message;
+        }
 
-        // Send messages
-        sendBtn.addEventListener("click", () => {
-            const message = chatInput.value.trim();
-            if (message) {
-                // Display message on sender side
-                const sentMessage = document.createElement("div");
-                sentMessage.classList.add("message", "sent");
-                sentMessage.textContent = message;
-                chatBox.appendChild(sentMessage);
-                chatBox.scrollTop = chatBox.scrollHeight;
+        chatBox.appendChild(newMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
 
-                // Emit message with userId
-                socket.emit("user-message", { message, userId });
+    // Send messages (Only emit to the server, don’t add manually)
+    sendBtn.addEventListener("click", () => {
+        const message = chatInput.value.trim();
+        if (message) {
+            socket.emit("user-message", { message, userId: myUserId });
+            chatInput.value = "";
+        }
+    });
+</script>
 
-                chatInput.value = "";
-            }
-        });
-    </script>
+
 </body>
 </html>
